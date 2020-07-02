@@ -1,0 +1,22 @@
+# depslib dependency file v1.0
+1593654397 source:f:\github\dna_fingerprints\fingerprints\fingerprint.cpp
+	"fingerprint.h"
+	<string>
+	<iostream>
+	<sstream>
+	<fstream>
+	<algorithm>
+	<vector>
+	<set>
+
+1593650697 f:\github\dna_fingerprints\fingerprints\fingerprint.h
+	<string>
+	<iostream>
+	<sstream>
+	<fstream>
+	<vector>
+
+1593654447 source:f:\github\dna_fingerprints\fingerprints\main.cpp
+	<iostream>
+	"fingerprint.h"
+
