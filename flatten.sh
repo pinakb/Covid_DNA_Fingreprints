@@ -11,7 +11,6 @@ do
 	sed -i '1d' temp.fasta
 	echo '$' >> temp.fasta
 	newFile=${file:42:9}
-#	tr -d '\n' < temp.txt > $outputDir/$newFile.txt
 	awk '{ printf("%s",$0); }  END {printf("\n");}' < temp.fasta > $outputDir/$newFile.txt
 	rm -f temp.fasta
 done
@@ -22,7 +21,6 @@ do
 	sed -i '1d' temp.fasta
 	echo '$' >> temp.fasta
 	newFile=${file:42:13}
-#	tr -d '\n' < temp.fasta > $outputDir/$newFile.txt
 	awk '{ printf("%s",$0); }  END {printf("\n");}' < temp.fasta > $outputDir/$newFile.txt
 	rm -f temp.fasta
 done
@@ -33,7 +31,6 @@ do
         sed -i '1d' temp.fasta
 	echo '$' >> temp.fasta
 	newFile=${file:42:13}
-#	tr -d '\n' < $file > $outputDir/$newFile.txt
 	awk '{ printf("%s",$0); }  END {printf("\n");}' < temp.fasta > $outputDir/$newFile.txt
 	rm -f temp.fasta
 done
