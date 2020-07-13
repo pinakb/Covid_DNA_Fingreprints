@@ -4,6 +4,7 @@
 #include<sstream>
 #include<fstream>
 #include<algorithm>
+#include<map>
 #include<set>
 
 using namespace std;
@@ -21,21 +22,32 @@ fingerprint::fingerprint()
 
 fingerprint::~fingerprint()
 {
-    //dtor
+    deleteTree(root);
 }
 
 int fingerprint::getChildIndex(char c)
 {
     static set<char>indexSet(sequence.begin(), sequence.end());
     set<char>::iterator itr;
-    int index=0;
+//    int index= 0;
     for(itr= indexSet.begin(); itr!=indexSet.end(); ++itr)
     {
         if(*itr ==c)
         {
-            return index;
+            if(*itr=='$')
+                return 0;
+            else if(*itr == 'A')
+                return 1;
+            else if(*itr == 'C')
+                return 2;
+            else if(*itr == 'G')
+                return 3;
+            else if(*itr == 'T')
+                return 4;
+            else
+                return 5;
         }
-        index++;
+        //index++;
     }
 }
 
@@ -71,27 +83,73 @@ void fingerprint::readFile(string input)
     {
         infile>>sequence;
     }
-    //cout<<sequence;
+//    sequence+=to_string(fileCounter);
+    database.push_back(sequence);
+//    fileCounter++;
 }
 
 void fingerprint::buildTree()
 {
 
     root->nodeId = sequence.length() + nodeCount;
-    sequence_len = sequence.length();
+    sequence = "";
+    vector<int> endIndices;
+    int last=0;
+    int prev=0;
+    for(int x=0; x<database.size(); x++)
+    {
+        string temp = database[x];
+        if(x==0)
+        {
+            last= temp.length()-1;
+            endIndices.push_back(last+prev);
+            prev = last+prev;
+        }
+        else
+        {
+            last = temp.length();
+            endIndices.push_back(last+prev);
+            prev = last+prev;
+        }
+
+    }
+
+
     outfile.open(ReportPath.c_str(), ios::out);
+    //start of suffix insertion
+    for(int y=0; y< database.size(); y++)
+    {
+        sequence += database[y];
+    }
+    sequence_len = sequence.length();
+    cout<<"Insert sequence of length: "<<sequence_len<<endl;
+
     for(int i =0; i<sequence.length(); i++)
     {
         string seq = sequence.substr(i, (sequence.length()-i));
-        //outfile<<"Inserting: "<<seq<<endl;
-        outfile<<"-----------------------------------"<<endl;
         findPath(root, seq);
     }
-    cout<<"Length of sequence: "<<sequence.length()<<endl;
+    //end of suffix insertion
+
+    //Coloring
+
+    pruneLeavesAndColor(endIndices);
+    colorNodes(root);
+    cout<<"Coloring of tree is complete"<<endl;
+    for(int y=0; y<database.size(); y++)
+    {
+        string fp = getFingerprint(colors[y]);
+        cout<<"for color: "<<colors[y]<<" fingerprint: "<<fp<<endl;
+    }
+
+    //end of coloring
+
     cout<<"total number of Internal Nodes: "<<nodeCount<<endl;
-    outfile.close();
     leafCounter(root);
     cout<<"total number of leaves: "<<counter<<endl;
+    outfile.close();
+
+
 }
 
 void fingerprint::findPath(node* root, string suffix)
@@ -102,7 +160,12 @@ void fingerprint::findPath(node* root, string suffix)
     if(curr->childCounter ==0)
     {
         curr->childCounter+=1;
-        node* leaf = (node*)malloc(sizeof(node));
+        node* leaf = new node();
+        leaf->color = "black"; //default color
+        for(int p=0; p<MAX_CHAR; p++)
+        {
+            leaf->child[p]=NULL;
+        }
         char c= suffix[0];
         int index = getChildIndex(c);
         curr->child[index] = leaf;
@@ -111,7 +174,6 @@ void fingerprint::findPath(node* root, string suffix)
         leafCount++;
         leaf->nodeId = leafCount;
         leaf->parent = curr;
-
         //log
 //        outfile<<"leaf edge label: "<<getEdgeLabel(leaf)<<endl;
 //        outfile<<"leaf start index: "<<leaf->startIndex<<endl;
@@ -133,7 +195,12 @@ void fingerprint::findPath(node* root, string suffix)
             {
             INS:
                 curr->childCounter += 1;
-                node* leaf = (node*)malloc(sizeof(node));
+                node* leaf = new node();
+                leaf->color= "black"; //default color
+                for(int p=0; p<MAX_CHAR; p++)
+                {
+                    leaf->child[p]=NULL;
+                }
                 char c= suffix[0];
                 int index = getChildIndex(c);
                 curr->child[index] = leaf;
@@ -184,7 +251,8 @@ void fingerprint::findPath(node* root, string suffix)
                         else
                         {//start3
                             int commonLength = getCommonLength(label, suffix);
-                            node* internalNode = (node*) malloc(sizeof(node));
+                            node* internalNode = new node();
+                            internalNode->color = "black"; //default color
                             internalNode->childCounter =0;
                             for(int p=0; p<MAX_CHAR; p++)
                             {
@@ -234,10 +302,26 @@ void fingerprint::leafCounter(node* r)
         if(curr->child[z] !=NULL)
         {
             temp = curr->child[z];
-            string elabel= getEdgeLabel(temp);
-            if(elabel[(elabel.length())-1]=='$')
+            if(temp->nodeId <=sequence_len)
             {
                 counter++;
+//                string pathLabel="";
+//                node* frontTracer = temp;
+//                node* backTracer = temp;
+//                while(frontTracer->parent!= NULL)
+//                {
+//                    backTracer = frontTracer;
+//                    frontTracer = frontTracer->parent;
+//                    string elabel = getEdgeLabel(backTracer);
+//                    reverse(elabel.begin(), elabel.end());
+//                    pathLabel+=elabel;
+//                }
+//                reverse(pathLabel.begin(), pathLabel.end());
+//                outfile<<"leaf id: "<<temp->nodeId<<endl;
+//                outfile<<"leaf color: "<<temp->color<<endl;
+////                outfile<<"leaf pathLabel: "<<pathLabel<<endl;
+//                outfile<<"--------------------------------------"<<endl;
+
             }
             else
             {
@@ -246,3 +330,168 @@ void fingerprint::leafCounter(node* r)
         }
     }
 }
+
+void fingerprint::pac(node* root, int index, string c)
+{
+    node* curr = root;
+    node* temp = NULL;
+    int last = index+1;
+    for(int z =0; z<MAX_CHAR; z++)
+    {
+        if(curr->child[z] !=NULL)
+        {
+            temp = curr->child[z];
+            if(temp->nodeId <= last)
+            {
+                temp->endIndex = index;
+                temp->color= c;
+                temp->visited = true;
+            }
+            else
+            {
+                pac(temp,index, c);
+            }
+        }
+    }
+}
+
+void fingerprint::pruneLeavesAndColor(vector<int> endIndices)
+{
+    for(int i=endIndices.size(); i>0; i--)
+    {
+        int index = endIndices[i-1];
+        string c = colors[i-1];
+        cout<<"index: "<<index<<endl;
+        cout<<"color: "<<c<<endl;
+        cout<<"Calling pac."<<endl;
+        pac(root, index, c);
+    }
+}
+
+
+set<string> fingerprint::visitChildren(node* root)
+{
+    set<string> childColor;
+    for(int x=0; x<MAX_CHAR; x++)
+    {
+        if(root->child[x]==NULL)
+            continue;
+        else
+        {
+            node* temp = root->child[x];
+            childColor.insert(temp->color);
+        }
+    }
+    return childColor;
+}
+
+void fingerprint::colorNodes(node* root)
+{
+    if(root==NULL || root->visited == true)
+    {
+        return;
+    }
+    for(int i=0; i<MAX_CHAR; i++)
+    {
+        colorNodes(root->child[i]);
+    }
+    set<string> childColor = visitChildren(root);
+    if(childColor.size()>1)
+    {
+        root->color = mix;
+        root->visited = true;
+//        outfile<<"node id: "<<root->nodeId<<endl;
+//        outfile<<"node color: "<<root->color<<endl;
+//        outfile<<"--------------------------------------"<<endl;
+    }
+    else
+    {
+        auto itr = childColor.begin();
+        root->color = *itr;
+        root->visited = true;
+//        outfile<<"node id: "<<root->nodeId<<endl;
+//        outfile<<"node color: "<<root->color<<endl;
+//        outfile<<"--------------------------------------"<<endl;
+    }
+}
+
+void fingerprint::searchFP(string *retString, node* root, string c)
+{
+    if(root == NULL)
+    {
+        return;
+    }
+    for(int i=0; i<MAX_CHAR; i++)
+    {
+        if(root->child[i]!= NULL)
+        {
+
+            node* temp = root->child[i];
+            if(temp->color == c)
+            {
+
+                char tempFirstChar = sequence[temp->startIndex];
+                string pathLabel="";
+                node* frontTracer = root;
+                node* backTracer = root;
+                while(frontTracer->parent!= NULL)
+                {
+                    backTracer = frontTracer;
+                    frontTracer = frontTracer->parent;
+                    string elabel = getEdgeLabel(backTracer);
+                    reverse(elabel.begin(), elabel.end());
+                    pathLabel+=elabel;
+                }
+                reverse(pathLabel.begin(), pathLabel.end());
+                pathLabel+=tempFirstChar;
+
+                if(*retString == "NULL" && pathLabel.length()>3)
+                {
+                    outfile<<c<<" pathlabel: "<<pathLabel<<endl;
+                    outfile<<"--------------------------------------"<<endl;
+                    *retString = pathLabel;
+                }
+                else
+                {
+                    if(retString->length()> pathLabel.length() && pathLabel.length()>3)
+                    {
+                        *retString = pathLabel;
+                        outfile<<c<<" pathlabel: "<<pathLabel<<endl;
+                        outfile<<"--------------------------------------"<<endl;
+                    }
+                }
+            }
+            else
+            {
+                    searchFP(retString, root->child[i], c);
+            }
+        }
+        else
+        {
+            continue;
+        }
+    }
+}
+
+
+string fingerprint::getFingerprint(string c)
+{
+    string retString = "NULL";
+    searchFP(&retString, root, c);
+    return retString;
+}
+
+
+void fingerprint:: deleteTree(node* root)
+{
+    if(root == NULL)
+    {
+        return;
+    }
+    for(int i=0; i<MAX_CHAR; i++)
+    {
+        deleteTree(root->child[i]);
+    }
+    free(root);
+}
+
