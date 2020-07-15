@@ -1,2 +1,33 @@
 # Covid_DNA_Fingreprints
-Identifying Shortest fingerprints from Covid Viruses DNA sequences
+Coronavirus represents a family of viruses which is the main pathogen in SARS (2003-2004), MERS (2012-2014), and in the novel coronavirus COVID-19 (Dec-2019).
+Testing for COVID-19 relies on our ability to extract and amplify the part of the DNA that is unique to a strain. Since the viral genetic material is RNA, a process called Reverse Transcription PCR is used to first convert the extracted RNA into a DNA, and then the DNA copies are target amplified in order to ascertain if the strain is COVID-19 (positive) or not (negative). Identifying unique parts of these DNA strains becomes more important from COVID-19 testing point of view and from Vaccine development point of view. 
+
+# Goal
+Capturing shortest fingerprints of DNA strains which are unique to only one particular strain in the family of viruses. Identify "DNA fingerprints" for each of the 'k' strains. Here, a "DNA fingerprint" for a given strain 's_i' is defined to be a shortest unique substring of 's_i' - i.e., a substring that is present only in strain 's_i', and is the shortest possible such candidate.
+
+# Dataset
+COVID-19, MERS and SARS DNA sequences were obtained from NCBI Virus database. The NCBI Virus database has more than 3,000 genomes for this family of viruses.
+For more information visit : https://www.ncbi.nlm.nih.gov/labs/virus/vssi/#/
+
+Used Virus Strains:
+
+1) Covid_Australia
+2) Covid_Brazil
+3) Covid_India
+4) Covid_USA
+5) Covid_Wuhan
+6) MERS_2012_KF600620
+7) MERS_2014_KY581694
+8) MERS_2014_USA_KP223131
+9) SARS_2003_GU553363
+10) SARS_2017_MK062179
+
+# Implementation
+Build Genralized Suffix Tree (GST) of 'k' strains. 
+Using the GST identify the nodes corresponding to short shared substrings instead of long shared substrings for which GSTs are traditionally used for. Short shared matches upon single character extension gurantees unique fingerprint for a given sequence 's_i'.
+Implemenation of Graph coloring scheme to color the nodes in GST based upon string origins in a post-order traversal manner.
+
+# Limitations:
+1) Max value of 'k' is set to 10. Due to hardware limitations no more than 10 virus strains could be used.
+2) Min value of 'k' is set to 2. This is obvious since a single strain will always be unique.
+
