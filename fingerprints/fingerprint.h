@@ -12,7 +12,6 @@ using namespace std;
 class fingerprint
 {
     public:
-
         //Node structure definition
         struct node{
             int startIndex;

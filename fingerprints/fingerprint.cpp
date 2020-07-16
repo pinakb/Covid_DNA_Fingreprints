@@ -134,10 +134,12 @@ void fingerprint::buildTree()
         string seq = sequence.substr(i, (sequence.length()-i));
         findPath(root, seq);
     }
+    cout<<"Suffix Tree Generated."<<endl;
     //end of suffix insertion
 
     //Coloring
     pruneLeavesAndColor(endIndices);
+    cout<<"Pruning of leaves complete."<<endl;
     colorNodes(root);
     cout<<"Coloring of tree is complete"<<endl;
     for(int y=0; y<database.size(); y++)

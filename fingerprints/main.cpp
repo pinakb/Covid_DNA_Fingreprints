@@ -34,3 +34,4 @@ int main()
     //Get Fingerprints
     f.buildTree();
 }
+
