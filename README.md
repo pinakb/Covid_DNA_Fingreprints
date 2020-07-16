@@ -32,3 +32,18 @@ Implemenation of Graph coloring scheme to color the nodes in GST based upon stri
 2) Min value of 'k' is set to 2. This is obvious since a single strain will always be unique.
 
 # Output:
+
+1) Covid Australia fingerprint: ATACAGTG
+2) Covid Brazil fingerprint: CGCGCTC
+3) Covid India fingerprint: ACTAAGGA
+4) Covid USA fingerprint: ACTTACCG
+5) Covid Wuhan fingerprint: GTACAGTGAACAATGCTAGGGAGAGCTGCCTATATGGAAGAGCCCTAATGTGTAAAATTAATTTTAGTAGTGCTATCCCCATGTGATTTTAATAGCTTCTTAGGAGAATGACAAAAAAAAAAAAA
+6) MERS_2012_KF600620 fingerprint: CAGGAGG
+7) MERS_2014_KY581694 fingerprint: AACCTCG
+8) MERS_2014_USA_KP223131 fingerprint: CAAGGGG
+9) SARS_2003_GU553363 fingerprint: CCCCTTG
+10) SARS_2017_MK062179 fingerprint: GTCCCC
+
+# Testing the Sequences for their uniqueness
+
+![image](https://user-images.githubusercontent.com/39387132/87611451-f2ed2300-c6bc-11ea-9ee8-96d445e196c3.png)
