@@ -4,9 +4,7 @@
 #include<sstream>
 #include<fstream>
 #include<algorithm>
-#include<map>
 #include<set>
-
 using namespace std;
 
 
@@ -23,6 +21,8 @@ fingerprint::fingerprint()
 fingerprint::~fingerprint()
 {
     deleteTree(root);
+    database.clear();
+    colors.clear();
 }
 
 int fingerprint::getChildIndex(char c)
@@ -47,7 +47,6 @@ int fingerprint::getChildIndex(char c)
             else
                 return 5;
         }
-        //index++;
     }
 }
 
@@ -83,13 +82,19 @@ void fingerprint::readFile(string input)
     {
         infile>>sequence;
     }
-//    sequence+=to_string(fileCounter);
+    sequence+=to_string(fileCounter);
     database.push_back(sequence);
-//    fileCounter++;
+    fileCounter++;
 }
 
 void fingerprint::buildTree()
 {
+    if(database.size()>10)
+    {
+        cout<<"No more than 10 input files can be handled."<<endl;
+        cout<<"Total number of input files: "<<database.size()<<endl;
+        return;
+    }
 
     root->nodeId = sequence.length() + nodeCount;
     sequence = "";
@@ -132,24 +137,21 @@ void fingerprint::buildTree()
     //end of suffix insertion
 
     //Coloring
-
     pruneLeavesAndColor(endIndices);
     colorNodes(root);
     cout<<"Coloring of tree is complete"<<endl;
     for(int y=0; y<database.size(); y++)
     {
         string fp = getFingerprint(colors[y]);
-        cout<<"for color: "<<colors[y]<<" fingerprint: "<<fp<<endl;
+        outfile<<"for color: "<<colors[y]<<" fingerprint: "<<fp<<endl;
     }
-
+    cout<<"Check the report file to verify Fingerprints"<<endl;
     //end of coloring
 
     cout<<"total number of Internal Nodes: "<<nodeCount<<endl;
     leafCounter(root);
     cout<<"total number of leaves: "<<counter<<endl;
     outfile.close();
-
-
 }
 
 void fingerprint::findPath(node* root, string suffix)
@@ -305,23 +307,6 @@ void fingerprint::leafCounter(node* r)
             if(temp->nodeId <=sequence_len)
             {
                 counter++;
-//                string pathLabel="";
-//                node* frontTracer = temp;
-//                node* backTracer = temp;
-//                while(frontTracer->parent!= NULL)
-//                {
-//                    backTracer = frontTracer;
-//                    frontTracer = frontTracer->parent;
-//                    string elabel = getEdgeLabel(backTracer);
-//                    reverse(elabel.begin(), elabel.end());
-//                    pathLabel+=elabel;
-//                }
-//                reverse(pathLabel.begin(), pathLabel.end());
-//                outfile<<"leaf id: "<<temp->nodeId<<endl;
-//                outfile<<"leaf color: "<<temp->color<<endl;
-////                outfile<<"leaf pathLabel: "<<pathLabel<<endl;
-//                outfile<<"--------------------------------------"<<endl;
-
             }
             else
             {
@@ -331,25 +316,35 @@ void fingerprint::leafCounter(node* r)
     }
 }
 
-void fingerprint::pac(node* root, int index, string c)
+void fingerprint::pac(node* root, int prevIndex, int currIndex, string c)
 {
     node* curr = root;
     node* temp = NULL;
-    int last = index+1;
+    int last = currIndex+1;
+    int first;
+    if(prevIndex==0)
+    {
+        first = prevIndex+1;
+    }
+    else
+    {
+        first = prevIndex+2;
+    }
+
     for(int z =0; z<MAX_CHAR; z++)
     {
         if(curr->child[z] !=NULL)
         {
             temp = curr->child[z];
-            if(temp->nodeId <= last)
+            if(temp->nodeId >= first && temp->nodeId <= last)
             {
-                temp->endIndex = index;
+                temp->endIndex = currIndex;
                 temp->color= c;
                 temp->visited = true;
             }
             else
             {
-                pac(temp,index, c);
+                pac(temp, prevIndex, currIndex, c);
             }
         }
     }
@@ -357,14 +352,22 @@ void fingerprint::pac(node* root, int index, string c)
 
 void fingerprint::pruneLeavesAndColor(vector<int> endIndices)
 {
-    for(int i=endIndices.size(); i>0; i--)
+    int currIndex=0;
+    int prevIndex=0;
+    for(int i=0; i<endIndices.size(); i++)
     {
-        int index = endIndices[i-1];
-        string c = colors[i-1];
-        cout<<"index: "<<index<<endl;
-        cout<<"color: "<<c<<endl;
-        cout<<"Calling pac."<<endl;
-        pac(root, index, c);
+        currIndex = endIndices[i];
+        if(i==0)
+        {
+            prevIndex= 0;
+        }
+        else
+        {
+            prevIndex= endIndices[i-1];
+        }
+        string c = colors[i];
+        pac(root, prevIndex, currIndex, c);
+
     }
 }
 
@@ -400,18 +403,12 @@ void fingerprint::colorNodes(node* root)
     {
         root->color = mix;
         root->visited = true;
-//        outfile<<"node id: "<<root->nodeId<<endl;
-//        outfile<<"node color: "<<root->color<<endl;
-//        outfile<<"--------------------------------------"<<endl;
     }
     else
     {
         auto itr = childColor.begin();
         root->color = *itr;
         root->visited = true;
-//        outfile<<"node id: "<<root->nodeId<<endl;
-//        outfile<<"node color: "<<root->color<<endl;
-//        outfile<<"--------------------------------------"<<endl;
     }
 }
 
@@ -445,19 +442,27 @@ void fingerprint::searchFP(string *retString, node* root, string c)
                 reverse(pathLabel.begin(), pathLabel.end());
                 pathLabel+=tempFirstChar;
 
-                if(*retString == "NULL" && pathLabel.length()>3)
+                string finalString;
+                string check = "$";
+                size_t found = pathLabel.find(check);
+                if (found != string::npos)
                 {
-                    outfile<<c<<" pathlabel: "<<pathLabel<<endl;
-                    outfile<<"--------------------------------------"<<endl;
+                    continue;
+                }
+
+                if(*retString == "NULL" && pathLabel.length()>2)
+                {
+//                    outfile<<c<<" pathlabel: "<<pathLabel<<endl;
+//                    outfile<<"--------------------------------------"<<endl;
                     *retString = pathLabel;
                 }
                 else
                 {
-                    if(retString->length()> pathLabel.length() && pathLabel.length()>3)
+                    if(retString->length()> pathLabel.length() && pathLabel.length()>2)
                     {
                         *retString = pathLabel;
-                        outfile<<c<<" pathlabel: "<<pathLabel<<endl;
-                        outfile<<"--------------------------------------"<<endl;
+//                        outfile<<c<<" pathlabel: "<<pathLabel<<endl;
+//                        outfile<<"--------------------------------------"<<endl;
                     }
                 }
             }
