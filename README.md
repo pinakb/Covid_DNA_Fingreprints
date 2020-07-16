@@ -31,3 +31,4 @@ Implemenation of Graph coloring scheme to color the nodes in GST based upon stri
 1) Max value of 'k' is set to 10. Due to hardware limitations no more than 10 virus strains could be used.
 2) Min value of 'k' is set to 2. This is obvious since a single strain will always be unique.
 
+# Output:
